@@ -28,6 +28,7 @@ def get_match_info(api_key, tournament_id):
     # 해당 tournament_id를 불러오기 위한 link 작성
     url = f"https://api.pubg.com/tournaments/{tournament_id}"
     header = {"Authorization": api_key, "Accept": "application/vnd.api+json"}
+    
     # tournament_list를 json으로 호출
     r = requests.get(url, headers=header)
     current_tournament = r.json()
@@ -85,6 +86,7 @@ def get_match_info2(api_key, tournament_id):
     # 해당 tournament_id를 불러오기 위한 link 작성
     url = f"https://api.pubg.com/tournaments/{tournament_id}"
     header = {"Authorization": api_key, "Accept": "application/vnd.api+json"}
+
     # tournament_list를 json으로 호출
     r = requests.get(url, headers=header)
     current_tournament = json.loads(r.text)
