@@ -41,9 +41,8 @@ def get_match_info(api_key, tournament_id):
 
     return match_info
 
-def get_match_participant(api_key, match_info):
+def get_match_participant(api_key, match_info_id):
     PUBG_prime = PUBG(api_key=api_key, shard='pc-tournament', gzip=True)
-
     # match_participant
     player_id = []
     team_roster_id = []
@@ -53,14 +52,14 @@ def get_match_participant(api_key, match_info):
     participant_stats = []
 
     # match_participant 값 입력
-    for i in match_info['matchId']:
+    for i in match_info_id:
         match = PUBG_prime.match(i)
         rosters = match.rosters
-        for i in range(len(rosters)):
-            roster = rosters[i]
+        for j in range(len(rosters)):
+            roster = rosters[j]
             roster_participant = roster.participants
-            for i in range(len(roster_participant)):
-                participant = roster_participant[i]
+            for k in range(len(roster_participant)):
+                participant = roster_participant[k]
                 match_id.append(match.id)
                 player_id.append(participant.name)
                 team_roster_id.append(roster.id)
@@ -85,7 +84,7 @@ def get_match_participant(api_key, match_info):
 def get_match_info2(api_key, tournament_id):
     # 해당 tournament_id를 불러오기 위한 link 작성
     url = f"https://api.pubg.com/tournaments/{tournament_id}"
-    header = {"Authorization": api_key, "Accept": "application/vnd.api+json"}
+    header = {"Authorization": api_key, "Accept": "application/json"}
 
     # tournament_list를 json으로 호출
     r = requests.get(url, headers=header)
