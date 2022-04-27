@@ -33,16 +33,16 @@ def get_match_info(api_key, tournament_id):
     r = requests.get(url, headers=header)
     current_tournament = r.json()
 
-    # 모든 match_id와 created_at을 dict으로 출력
-    matchId_dict = {match['attributes']['createdAt']: match['id'] for match in current_tournament['included']}
+    # 해당 tournament_id의 모든 match_id와 created_at을 dict으로 출력
+    matchId_dict = {match["attributes"]["createdAt"]: match["id"] for match in current_tournament["included"]}
 
     # matchId_dict를 createdAt로 정렬 후 dataframe으로 변환
-    match_info = pd.DataFrame(sorted(matchId_dict.items(), key=lambda x: x[0]), columns=['createdAt', 'matchId'])
+    match_info = pd.DataFrame(sorted(matchId_dict.items(), key=lambda x: x[0]), columns=["createdAt", "matchId"])
 
     return match_info
 
 def get_match_participant(api_key, match_info_id):
-    PUBG_prime = PUBG(api_key=api_key, shard='pc-tournament', gzip=True)
+    PUBG_prime = PUBG(api_key=api_key, shard="pc-tournament", gzip=True)
     # match_participant
     player_id = []
     team_roster_id = []
@@ -73,27 +73,57 @@ def get_match_participant(api_key, match_info_id):
     match_participant_stats = pd.DataFrame(participant_stats).drop(columns='player_id')
 
     # 인덱스 기준으로 join
-    match_participant_all = pd.merge(match_participant, match_participant_stats, how='inner', left_index=True, right_index=True) 
+    match_participant_all = pd.merge(match_participant, match_participant_stats, how="inner", left_index=True, right_index=True)
 
     # 불필요한 column 제거
-    result_match_participant = match_participant_all.drop(['match_id', 'death_type', 'kill_place', 'name', 'ride_distance', 'road_kills', 'swim_distance', 'team_roster_id', 'team_id', 'vehicle_destroys', 'walk_distance', 'weapons_acquired', 'win_place'], axis='columns')
+    result_match_participant = match_participant_all.drop(["match_id", "death_type", "kill_place", "name", "ride_distance", "road_kills", "swim_distance", "team_roster_id", "team_id", "vehicle_destroys", "walk_distance", "weapons_acquired", "win_place"], axis='columns')
 
     return result_match_participant
 
+def get_match_participant_single(api_key, match_info_id):
+    PUBG_prime = PUBG(api_key=api_key, shard="pc-tournament", gzip=True)
+    # match_participant
+    player_id = []
+    team_roster_id = []
+    team_id = []
+    team_rank = []
+    match_id = []
+    participant_stats = []
 
-def get_match_info2(api_key, tournament_id):
-    # 해당 tournament_id를 불러오기 위한 link 작성
-    url = f"https://api.pubg.com/tournaments/{tournament_id}"
-    header = {"Authorization": api_key, "Accept": "application/json"}
+    # match_participant 값 입력
+    match = PUBG_prime.match(match_info_id)
+    rosters = match.rosters
+    for i in range(len(rosters)):
+        roster = rosters[i]
+        roster_participant = roster.participants
+        for j in range(len(roster_participant)):
+            participant = roster_participant[j]
+            match_id.append(match.id)
+            player_id.append(participant.name)
+            team_roster_id.append(roster.id)
+            team_rank.append(roster.stats['rank'])
+            team_id.append(roster.stats['team_id'])
+            stats = participant.stats
+            participant_stats.append(stats)
 
-    # tournament_list를 json으로 호출
-    r = requests.get(url, headers=header)
-    current_tournament = json.loads(r.text)
+    # Dataframe 생성
+    match_participant = pd.DataFrame({'match_id': match_id, 'player_id': player_id, 'team_roster_id': team_roster_id, 'team_id': team_id, 'team_rank': team_rank})
+    match_participant_stats = pd.DataFrame(participant_stats).drop(columns='player_id')
 
-    # 모든 match_id와 created_at을 dict으로 출력
-    matchId_dict = {match['attributes']['createdAt']: match['id'] for match in current_tournament['included']}
+    # 인덱스 기준으로 join
+    match_participant_all = pd.merge(match_participant, match_participant_stats, how="inner", left_index=True, right_index=True)
 
-    # matchId_dict를 createdAt로 정렬 후 dataframe으로 변환
-    match_info = pd.DataFrame(sorted(matchId_dict.items(), key=lambda x: x[0]), columns=['createdAt', 'matchId'])
+    # 불필요한 column 제거
+    result_match_participant_single = match_participant_all.drop(["match_id", "death_type", "kill_place", "name", "ride_distance", "road_kills", "swim_distance", "team_roster_id", "team_id", "vehicle_destroys", "walk_distance", "weapons_acquired", "win_place"], axis='columns')
 
-    return match_info
+    return result_match_participant_single
+
+def cal_round_point_int(team_rank, kills):
+    round_point = 0
+    team_point_rule = {1:10, 2:6, 3:5, 4:4, 5:3, 6:2, 7:1, 8:1}
+    if team_rank in team_point_rule.keys():
+        team_point = team_point_rule[team_rank]
+    else:
+        team_point = 0
+    round_point += (team_point + kills)
+    return round_point
