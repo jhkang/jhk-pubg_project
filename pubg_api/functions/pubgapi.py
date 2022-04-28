@@ -1,6 +1,7 @@
 import requests
 import json
 import pandas as pd
+from scipy import stats
 from chicken_dinner.pubgapi import PUBG
 
 def get_tournament_info(api_key):
@@ -42,6 +43,7 @@ def get_match_info(api_key, tournament_id):
     return match_info
 
 def get_match_participant(api_key, match_info_id):
+    # match의 모든 id값을 받아서 append
     PUBG_prime = PUBG(api_key=api_key, shard="pc-tournament", gzip=True)
     # match_participant
     player_id = []
@@ -76,11 +78,12 @@ def get_match_participant(api_key, match_info_id):
     match_participant_all = pd.merge(match_participant, match_participant_stats, how="inner", left_index=True, right_index=True)
 
     # 불필요한 column 제거
-    result_match_participant = match_participant_all.drop(["match_id", "death_type", "kill_place", "name", "ride_distance", "road_kills", "swim_distance", "team_roster_id", "team_id", "vehicle_destroys", "walk_distance", "weapons_acquired", "win_place"], axis='columns')
+    result_match_participant = match_participant_all.drop(["team_kills", "match_id", "death_type", "kill_place", "name", "ride_distance", "road_kills", "swim_distance", "team_roster_id", "team_id", "vehicle_destroys", "walk_distance", "weapons_acquired", "win_place"], axis='columns')
 
     return result_match_participant
 
 def get_match_participant_single(api_key, match_info_id):
+    # 단일 id 받아서 해당 경기만 출력
     PUBG_prime = PUBG(api_key=api_key, shard="pc-tournament", gzip=True)
     # match_participant
     player_id = []
@@ -113,10 +116,24 @@ def get_match_participant_single(api_key, match_info_id):
     # 인덱스 기준으로 join
     match_participant_all = pd.merge(match_participant, match_participant_stats, how="inner", left_index=True, right_index=True)
 
+    # win column 추가
+    match_participant_all["win"] = 1 * (match_participant_all["win_place"] == 1)
+
     # 불필요한 column 제거
-    result_match_participant_single = match_participant_all.drop(["match_id", "death_type", "kill_place", "name", "ride_distance", "road_kills", "swim_distance", "team_roster_id", "team_id", "vehicle_destroys", "walk_distance", "weapons_acquired", "win_place"], axis='columns')
+    result_match_participant_single = match_participant_all.drop(["team_kills", "headshot_kills", "death_type", "kill_place", "name", "ride_distance", "road_kills", "swim_distance", "team_roster_id", "team_id", "vehicle_destroys", "walk_distance", "weapons_acquired", "win_place"], axis='columns')
 
     return result_match_participant_single
+
+def z_normalization(match_participant_single):
+    # Z-score normalization
+    z_label = (["dbnos", "assists", "boosts", "damage_dealt", "heals", "kill_streaks", "kills", "longest_kill", "revives", "time_survived"])
+
+    for i in z_label:
+        match_participant_single[i] = stats.zscore(match_participant_single[i])
+
+    match_participant_single.drop(["player_id", "team_rank", "match_id"], axis = 1, inplace = True)
+
+    return match_participant_single
 
 def cal_round_point_int(team_rank, kills):
     round_point = 0
