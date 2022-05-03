@@ -1,13 +1,11 @@
-PUBG E-Sports 데이터를 활용한 정량적 평가지표 설계 프로젝트
-=============
 Design evaluation indicators based on PUBG E-Sports data.
--------------
+=============
+PUBG E-Sports 데이터를 활용한 정량적 평가지표 설계 프로젝트
 
-* 기간 : 2020.04.19 ~ in progress
-* 목표 : Design evaluation indicators based on PUBG E-Sports data.
-
-## How to run? (실행방법)
-Change directory to jhk-pubg_project/
+## Setup(Dockerfile)
+[Get started with Docker remote containers on WSL 2](https://docs.microsoft.com/en-us/windows/wsl/tutorials/wsl-containers) <br/> <br/>
+Change directory to `jhk-pubg_project/` and create docker container. <br/>
+ex) container name: `pubg_dockerfile`
 ```
 docker build --tag pubg_dockerfile:0.1 .
 
