@@ -8,21 +8,13 @@ Change directory to `jhk-pubg_project/` and create & run docker container. <br/>
 ex) container name: `pubg_dockerfile`
 ```
 docker build --tag pubg_dockerfile:0.1 .
-```
-```
 docker create -it --rm --name pubg_dockerfile pubg_dockerfile:0.1
-```
-```
 docker start pubg_dockerfile
-```
-```
 docker exec -it pubg_dockerfile bash
 ```
 Stop docker container and remove image (if you need)
 ```
 docker stop pubg_dockerfile
-```
-```
 docker rmi pubg_dockerfile:0.1
 ```
 
