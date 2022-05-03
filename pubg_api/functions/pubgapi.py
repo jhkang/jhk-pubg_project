@@ -4,6 +4,8 @@ import pandas as pd
 from scipy import stats
 from chicken_dinner.pubgapi import PUBG
 
+z_label = (["dbnos", "assists", "boosts", "damage_dealt", "heals", "kill_streaks", "kills", "longest_kill", "revives", "ride_distance", "swim_distance", "headshot_kills", "vehicle_destroys", "walk_distance", "weapons_acquired"])
+
 def get_tournament_info(api_key):
     # Get the list of available tournaments
     url = "https://api.pubg.com/tournaments"
@@ -41,46 +43,6 @@ def get_match_info(api_key, tournament_id):
     match_info = pd.DataFrame(sorted(matchId_dict.items(), key=lambda x: x[0]), columns=["createdAt", "matchId"])
 
     return match_info
-
-def get_match_participant(api_key, match_info_id):
-    # match의 모든 id값을 받아서 append
-    PUBG_prime = PUBG(api_key=api_key, shard="pc-tournament", gzip=True)
-    # match_participant
-    player_id = []
-    team_roster_id = []
-    team_id = []
-    team_rank = []
-    match_id = []
-    participant_stats = []
-
-    # match_participant 값 입력
-    for i in match_info_id:
-        match = PUBG_prime.match(i)
-        rosters = match.rosters
-        for j in range(len(rosters)):
-            roster = rosters[j]
-            roster_participant = roster.participants
-            for k in range(len(roster_participant)):
-                participant = roster_participant[k]
-                match_id.append(match.id)
-                player_id.append(participant.name)
-                team_roster_id.append(roster.id)
-                team_rank.append(roster.stats['rank'])
-                team_id.append(roster.stats['team_id'])
-                stats = participant.stats
-                participant_stats.append(stats)
-
-    # Dataframe 생성
-    match_participant = pd.DataFrame({'match_id': match_id, 'player_id': player_id, 'team_roster_id': team_roster_id, 'team_id': team_id, 'team_rank': team_rank})
-    match_participant_stats = pd.DataFrame(participant_stats).drop(columns='player_id')
-
-    # 인덱스 기준으로 join
-    match_participant_all = pd.merge(match_participant, match_participant_stats, how="inner", left_index=True, right_index=True)
-
-    # 불필요한 column 제거
-    result_match_participant = match_participant_all.drop(["team_kills", "match_id", "death_type", "kill_place", "name", "ride_distance", "road_kills", "swim_distance", "team_roster_id", "team_id", "vehicle_destroys", "walk_distance", "weapons_acquired", "win_place"], axis='columns')
-
-    return result_match_participant
 
 def get_match_participant_single(api_key, match_info_id):
     # 단일 id 받아서 해당 경기만 출력
@@ -141,7 +103,7 @@ def get_match_participant_single(api_key, match_info_id):
 
 def z_normalization(match_participant_single):
     # Z-score normalization
-    z_label = (["dbnos", "assists", "boosts", "damage_dealt", "heals", "kill_streaks", "kills", "longest_kill", "revives", "ride_distance", "swim_distance", "headshot_kills", "vehicle_destroys", "walk_distance", "weapons_acquired"])
+    # z_label = (["dbnos", "assists", "boosts", "damage_dealt", "heals", "kill_streaks", "kills", "longest_kill", "revives", "ride_distance", "swim_distance", "headshot_kills", "vehicle_destroys", "walk_distance", "weapons_acquired"])
     
     for i in z_label:
         match_participant_single[i] = stats.zscore(match_participant_single[i])
@@ -157,3 +119,9 @@ def standard_scaling(df):
         series_std = df[col].std()
         df[col] = df[col].apply(lambda x: (x-series_mean)/series_std)
     return df
+
+def check_missing_value(filename, df):
+    # 결측치가 발생한 부분에서 log 파일(.csv) 생성
+    if (df.isnull().sum()).sum() != 0:
+        df.to_csv(f"./Data/Error_log/{filename}.csv")
+        raise Exception(f"Missing value: {(df.isnull().sum()).sum()}\nError_log: pubg_api/Data/Error_log/{filename}.csv")
