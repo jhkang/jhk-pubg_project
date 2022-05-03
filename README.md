@@ -4,20 +4,25 @@ PUBG E-Sports 데이터를 활용한 정량적 평가지표 설계 프로젝트
 
 ## Setup(Dockerfile)
 [Get started with Docker remote containers on WSL 2](https://docs.microsoft.com/en-us/windows/wsl/tutorials/wsl-containers) <br/> <br/>
-Change directory to `jhk-pubg_project/` and create docker container. <br/>
+Change directory to `jhk-pubg_project/` and create & run docker container. <br/>
 ex) container name: `pubg_dockerfile`
 ```
 docker build --tag pubg_dockerfile:0.1 .
-
+```
+```
 docker create -it --rm --name pubg_dockerfile pubg_dockerfile:0.1
-
+```
+```
 docker start pubg_dockerfile
-
+```
+```
 docker exec -it pubg_dockerfile bash
 ```
+Stop docker container and remove image (if you need)
 ```
 docker stop pubg_dockerfile
-
+```
+```
 docker rmi pubg_dockerfile:0.1
 ```
 
