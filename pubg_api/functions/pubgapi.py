@@ -1,5 +1,4 @@
 import requests
-import json
 import pandas as pd
 from scipy import stats
 from chicken_dinner.pubgapi import PUBG
@@ -27,14 +26,12 @@ def get_tournament_info(api_key):
     tournament_info["createdAt"] = tournament_createdAt
     return tournament_info
 
-def get_match_info(api_key, tournament_id):
-    # 해당 tournament_id를 불러오기 위한 link 작성
-    url = f"https://api.pubg.com/tournaments/{tournament_id}"
-    header = {"Authorization": api_key, "Accept": "application/vnd.api+json"}
-    
-    # tournament_list를 json으로 호출
-    r = requests.get(url, headers=header)
-    current_tournament = r.json()
+def get_match_info(api_key, idx):
+    pubg = PUBG(api_key, "pc-tournament")
+    tournaments = pubg.tournaments()
+    tournament = tournaments[idx]
+
+    current_tournament = tournament.response
 
     # 해당 tournament_id의 모든 match_id와 created_at을 dict으로 출력
     matchId_dict = {match["attributes"]["createdAt"]: match["id"] for match in current_tournament["included"]}
@@ -43,6 +40,46 @@ def get_match_info(api_key, tournament_id):
     match_info = pd.DataFrame(sorted(matchId_dict.items(), key=lambda x: x[0]), columns=["createdAt", "matchId"])
 
     return match_info
+
+def get_match_participant(api_key, match_info_id):
+    # match의 모든 id값을 받아서 append
+    PUBG_prime = PUBG(api_key=api_key, shard="pc-tournament", gzip=True)
+    # match_participant
+    player_id = []
+    team_roster_id = []
+    team_id = []
+    team_rank = []
+    match_id = []
+    participant_stats = []
+
+    # match_participant 값 입력
+    for i in match_info_id:
+        match = PUBG_prime.match(i)
+        rosters = match.rosters
+        for j in range(len(rosters)):
+            roster = rosters[j]
+            roster_participant = roster.participants
+            for k in range(len(roster_participant)):
+                participant = roster_participant[k]
+                match_id.append(match.id)
+                player_id.append(participant.name)
+                team_roster_id.append(roster.id)
+                team_rank.append(roster.stats['rank'])
+                team_id.append(roster.stats['team_id'])
+                stats = participant.stats
+                participant_stats.append(stats)
+
+    # Dataframe 생성
+    match_participant = pd.DataFrame({'match_id': match_id, 'player_id': player_id, 'team_roster_id': team_roster_id, 'team_id': team_id, 'team_rank': team_rank})
+    match_participant_stats = pd.DataFrame(participant_stats).drop(columns='player_id')
+
+    # 인덱스 기준으로 join
+    match_participant_all = pd.merge(match_participant, match_participant_stats, how="inner", left_index=True, right_index=True)
+
+    # 불필요한 column 제거
+    result_match_participant = match_participant_all.drop(["team_kills", "death_type", "kill_place", "name", "road_kills", "team_roster_id", "team_id", "vehicle_destroys", "weapons_acquired", "win_place"], axis='columns')
+
+    return result_match_participant
 
 def get_match_participant_single(api_key, match_info_id):
     # 단일 id 받아서 해당 경기만 출력
@@ -124,4 +161,4 @@ def check_missing_value(filename, df):
     # 결측치가 발생한 부분에서 log 파일(.csv) 생성
     if (df.isnull().sum()).sum() != 0:
         df.to_csv(f"./Data/Error_log/{filename}.csv")
-        raise Exception(f"Missing value: {(df.isnull().sum()).sum()}\nError_log: pubg_api/Data/Error_log/{filename}.csv")
+        raise Exception(f"Missing value: {(df.isnull().sum()).sum()}\nCheck Error_log: pubg_api/Data/Error_log/{filename}.csv")

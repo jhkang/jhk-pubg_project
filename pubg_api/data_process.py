@@ -18,17 +18,19 @@ dbname = os.environ.get('AWS_dbname')
 username = os.environ.get("AWS_username")
 password = os.environ.get("AWS_password")
 
-# tournament_info 불러오기
-tournament_info = get_tournament_info(api_key)
+# tournament_info(.csv) 불러오기
+tournament_info = pd.read_csv("./DB/tournament_info.csv")
+tournament_info.drop(["Unnamed: 0"], axis = 1, inplace = True)
 check_missing_value('tournament_info', tournament_info)
 
-for tournament_index in range(0,9): #len(tournament_info["id"])
+loading_bar = {0:'-', 1:'\\', 2:'|', 3:'/'}
+for tournament_index in range(len(tournament_info["id"])):
     # index 설정 및 해당 인덱스의 tournament_id 값 불러오기
     tournament_name = tournament_info["id"][tournament_index]
     tournament_createdAt = tournament_info["createdAt"][tournament_index]
 
     # cur_match_info(Current match info) 불러오기
-    cur_match_info = get_match_info(api_key, tournament_name)
+    cur_match_info = get_match_info(api_key, tournament_index)
 
     # match_participant_single 불러오기
     for match_index in range(len(cur_match_info["matchId"])):
@@ -48,13 +50,14 @@ for tournament_index in range(0,9): #len(tournament_info["id"])
         else:
             # 해당 경로에 train_match_data.csv 파일이 없으면, 파일 생성
             data.to_csv(f"./Data/Train_data/train_match_data.csv")
+        print(f"\rLoading tournament data {loading_bar[match_index%4]}", end="")
 
 data = pd.read_csv(f"./Data/Train_data/train_match_data.csv")
 data.drop(["Unnamed: 0", "match_id", "player_id"], axis = 1, inplace = True)
 
 #######################
-#  Linear Regression  #
-####################### round_point 획득량 예상 -> mvp 지표로 사용 가능
+#  Linear Regression  #  round_point 획득량 예상 -> mvp 지표로 사용 가능
+#######################
 X = data[data.columns.difference(['round_point', 'win'])]
 y = data['round_point']
 
@@ -68,7 +71,7 @@ lr_model = lr.fit(X_train, y_train)
 x_new=X_test
 y_new=lr_model.predict(x_new)
 
-print("<Linear Regression>")
+print("\n<Linear Regression>")
 print("훈련 세트 정확도 : {:.3f}".format(lr_model.score(X_train,y_train)))
 print("테스트 세트 정확도 : {:.3f}\n".format(lr_model.score(X_test,y_test)))
 
@@ -76,8 +79,8 @@ y_compare={'y_test':y_test, 'y_predicted':y_new}
 pd.DataFrame(y_compare)[:30].plot(y=['y_test', 'y_predicted'], alpha=0.6, kind="bar")
 
 #######################
-#    Random Forest    #
-####################### win_feature -> 우승 예측
+#    Random Forest    #  win_feature -> 우승 예측
+#######################
 rf_data = standard_scaling(data)
 z_label = (["dbnos", "assists", "boosts", "damage_dealt", "heals", "kill_streaks", "kills", "longest_kill", "revives", "ride_distance", "swim_distance", "headshot_kills", "vehicle_destroys", "walk_distance", "weapons_acquired"])
 X = rf_data[z_label]
