@@ -31,6 +31,19 @@ docker stop pubg_dockerfile
 docker rmi pubg_dockerfile:0.1
 ```
 
+## Execution order
+
+|Filename|Description|
+|---|---|
+|savecsv_tournament.py|Make tournament_info.csv|
+|savecsv_match.py|Make match_info.csv|
+|savecsv_participant.py|Make match_participant.csv|
+```
+python savecsv_tournament_info.py
+python savecsv_match_info.py
+python savecsv_participant.py
+```
+
 
 ## Reference Documentation
 * [PUBG Developer Portal](https://developer.pubg.com/)
