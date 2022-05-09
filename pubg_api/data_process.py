@@ -56,7 +56,7 @@ data = pd.read_csv(f"./Data/Train_data/train_match_data.csv")
 data.drop(["Unnamed: 0", "match_id", "player_id"], axis = 1, inplace = True)
 
 #######################
-#  Linear Regression  #  round_point 획득량 예상 -> mvp 지표로 사용 가능
+#  Linear Regression  #  round_point 획득량 예측 -> mvp 지표로 사용 가능
 #######################
 X = data[data.columns.difference(['round_point', 'win'])]
 y = data['round_point']
