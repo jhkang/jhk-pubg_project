@@ -15,8 +15,9 @@ conn = pymysql.connect(host=endpoint, user=username, passwd=password, database=d
 cur = conn.cursor()
 
 # SHOW(cur를 통해서 sql문을 주고 받는다.)
-cur.execute("SHOW TABLES")
+cur.execute("SHOW COLUMNS FROM match_participant")
 result = cur.fetchall()
+result = pd.DataFrame(result)
 print(result)
 
 # SELECT(cur를 통해서 sql문을 주고 받는다.)

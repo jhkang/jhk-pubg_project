@@ -19,8 +19,7 @@ username = os.environ.get("AWS_username")
 password = os.environ.get("AWS_password")
 
 # tournament_info(.csv) 불러오기
-tournament_info = pd.read_csv("./DB/tournament_info.csv")
-tournament_info.drop(["Unnamed: 0"], axis = 1, inplace = True)
+tournament_info = pd.read_csv("./DB/tournament_info.csv", index_col = 0)
 check_missing_value('tournament_info', tournament_info)
 
 loading_bar = {0:'-', 1:'\\', 2:'|', 3:'/'}
@@ -43,8 +42,7 @@ for tournament_index in range(len(tournament_info["id"])):
 
         if os.path.isfile("./Data/Train_data/train_match_data.csv"):
             # 해당 경로에 train_match_data.csv 파일이 있으면, 현재 내용을 해당 파일에 추가
-            train_data = pd.read_csv(f"./Data/Train_data/train_match_data.csv")
-            train_data.drop(["Unnamed: 0"], axis = 1, inplace = True)
+            train_data = pd.read_csv(f"./Data/Train_data/train_match_data.csv", index_col = 0)
             train_data = pd.concat([train_data, data], ignore_index=True)
             train_data.to_csv(f"./Data/Train_data/train_match_data.csv")
         else:
@@ -52,8 +50,7 @@ for tournament_index in range(len(tournament_info["id"])):
             data.to_csv(f"./Data/Train_data/train_match_data.csv")
         print(f"\rLoading tournament data {loading_bar[match_index%4]}", end="")
 
-data = pd.read_csv(f"./Data/Train_data/train_match_data.csv")
-data.drop(["Unnamed: 0", "match_id", "player_id"], axis = 1, inplace = True)
+data = pd.read_csv(f"./Data/Train_data/train_match_data.csv", index_col = 0)
 
 #######################
 #  Linear Regression  #  round_point 획득량 예측 -> mvp 지표로 사용 가능
@@ -86,7 +83,7 @@ z_label = (["dbnos", "assists", "boosts", "damage_dealt", "heals", "kill_streaks
 X = rf_data[z_label]
 y = rf_data["win"]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
 forest = RandomForestClassifier(n_estimators=50, random_state=0)
 forest.fit(X_train,y_train)
