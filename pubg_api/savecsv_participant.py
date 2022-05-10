@@ -1,0 +1,45 @@
+import pandas as pd
+import os
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from functions.pubgapi import get_match_participant_single
+from functions.pubgapi import check_missing_value
+
+# Load api key & RDS info (endpoint="rds 엔드포인트", dbname="db 이름", username="마스터 사용자 이름", password="rds 비밀번호")
+load_dotenv()
+api_key = os.environ.get("API_KEY")
+endpoint = os.environ.get("AWS_endpoint")
+dbname = os.environ.get('AWS_dbname')
+username = os.environ.get("AWS_username")
+password = os.environ.get("AWS_password")
+
+##############
+# DB connect #
+##############
+
+# create_engine("mysql+pymysql://아이디:"+"암호"+"@주소:포트/데이터베이스이름?charset=utf8", encoding='utf-8')
+engine = create_engine("mysql+pymysql://admin:"+password+"@"+endpoint+":3306/"+dbname+"?charset=utf8", encoding="utf-8")
+conn = engine.connect()
+
+match_info = pd.read_csv(f"./DB/match_info.csv")
+
+match_info_id = match_info["matchId"]
+num_match = len(match_info_id)
+
+for idx in range(num_match):
+    cur_match_participant_single = get_match_participant_single(api_key, match_info_id[idx])
+    check_missing_value("cur_match_participant_single",cur_match_participant_single)
+
+    if os.path.isfile("./DB/match_participant.csv"):
+        # 해당 경로에 match_participant.csv 파일이 있으면, 현재 내용을 해당 파일에 추가
+        match_participant = pd.read_csv("./DB/match_participant.csv")
+        match_participant.drop(["Unnamed: 0"], axis = 1, inplace = True)
+        match_participant = pd.concat([match_participant, cur_match_participant_single], ignore_index=True)
+        match_participant.to_csv("./DB/match_participant.csv")
+    else:
+        # 해당 경로에 match_participant.csv 파일이 없으면, 파일 생성
+        cur_match_participant_single.to_csv("./DB/match_participant.csv")
+
+
+# db접속 종료
+conn.close()
