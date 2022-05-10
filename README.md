@@ -31,7 +31,7 @@ docker stop pubg_dockerfile
 docker rmi pubg_dockerfile:0.1
 ```
 
-## Execution order
+## Execution
 
 |Filename|Description|
 |---|---|
